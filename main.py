@@ -2,6 +2,7 @@ import tkinter as tk
 import winsound
 import csv
 import os
+from datetime import datetime
 
 class TimerApp:
     def __init__(self, root, saveFile="timings.csv"):
@@ -76,17 +77,18 @@ class TimerApp:
     def save_timing(self):
         focus_time = self.timer_value
         break_time = self.timer_value // 5
-        self.timings.append([focus_time, break_time])
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        self.timings.append([current_date, focus_time, break_time])
         self.write_to_csv()
 
     def write_to_csv(self):
-        file_exists = os.path.exists(self.saveFile)
-        with open(self.saveFile, 'a', newline='') as csvfile:
+        file_exists = os.path.exists('timings.csv')
+        with open('timings.csv', 'a', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
             if not file_exists:
-                csvwriter.writerow(['Activity', 'Time'])
-            for focus, break_time in self.timings:
-                csvwriter.writerow([focus, break_time])
+                csvwriter.writerow(['Date', 'Activity', 'Time'])
+            for row in self.timings:
+                csvwriter.writerow(row)
 
 if __name__ == "__main__":
     root = tk.Tk()
