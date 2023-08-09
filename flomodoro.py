@@ -21,16 +21,22 @@ class TimerApp:
         self.loop_number = 0
         self.bell_sound = '\a'  # Bell sound (may not work on all systems)
 
+        # Create a frame to hold the buttons
+        button_frame = tk.Frame(root)
+        button_frame.pack()
+
+        # Create the "Start" button
+        self.button = tk.Button(button_frame, text="Start", font=("Helvetica", 14), command=self.toggle_timer)
+        self.button.pack(side=tk.LEFT, padx=10)  # Place the button on the left side with padding
+
+        # Create the "Track Work Time" button
+        self.plot_button = tk.Button(button_frame, text="Track Work Time", font=("Helvetica", 14), command=self.open_plot)
+        self.plot_button.pack(side=tk.LEFT, padx=10)  # Place the button on the left side with padding
+
         self.timer_label = tk.Label(root, text="00:00:00", font=("Helvetica", 20))
         self.timer_label.pack(pady=20)
 
-        self.button = tk.Button(root, text="Start", font=("Helvetica", 14), command=self.toggle_timer)
-        self.button.pack()
-
-        self.plot_button = tk.Button(root, text="Track Work Time", font=("Helvetica", 14), command=self.open_plot)
-        self.plot_button.pack()
-
-        self.figure = Figure(figsize=(6, 4), dpi=100)
+        self.figure = Figure(figsize=(8, 6), dpi=100)
         self.plot_canvas = FigureCanvasTkAgg(self.figure, root)
         self.plot_canvas.get_tk_widget().pack()
 
@@ -114,19 +120,19 @@ class TimerApp:
                 counts.append(int(row[1]))  # Assuming activity counts are in the second column
 
         plot_window = tk.Toplevel(self.root)
-        plot_window.title("Track Work Time")
+        plot_window.title("Activity Count Plot")
         plot_window.geometry("800x600")  # Set a smaller plot window size
 
         figure = Figure(figsize=(8, 6), dpi=100)
         ax = figure.add_subplot(111)
 
-        sns.lineplot(x=dates, y=counts, marker='x', ax=ax, label='Focus Time')
-        sns.lineplot(x=dates, y=[sum(counts[:i + 1]) for i in range(len(counts))], marker='x', ax=ax,
+        sns.lineplot(x=dates, y=counts, marker='o', ax=ax, label='Activity Count')
+        sns.lineplot(x=dates, y=[sum(counts[:i + 1]) for i in range(len(counts))], marker='o', ax=ax,
                      label='Total Time')
 
         ax.set_xlabel('Date')
-        ax.set_ylabel('Time')
-        ax.set_title('Focus Time and Total Focus by Date')
+        ax.set_ylabel('Value')
+        ax.set_title('Activity Count and Total Time over Time')
         ax.tick_params(axis='x', rotation=45)
         ax.legend()
 
