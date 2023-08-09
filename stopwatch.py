@@ -3,11 +3,16 @@ import winsound
 import csv
 import os
 from datetime import datetime
+import sys
+import seaborn as sns
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 class TimerApp:
     def __init__(self, root, saveFile="timings.csv"):
         self.root = root
-        self.root.title("Timer Application")
+        self.root.title("Flowmodoro")
+        self.root.geometry("300x150")
         self.saveFile = saveFile
 
         self.timer_value = 0
@@ -21,6 +26,13 @@ class TimerApp:
 
         self.button = tk.Button(root, text="Start", font=("Helvetica", 14), command=self.toggle_timer)
         self.button.pack()
+
+        self.plot_button = tk.Button(root, text="Track Work Time", font=("Helvetica", 14), command=self.open_plot)
+        self.plot_button.pack()
+
+        self.figure = Figure(figsize=(6, 4), dpi=100)
+        self.plot_canvas = FigureCanvasTkAgg(self.figure, root)
+        self.plot_canvas.get_tk_widget().pack()
 
         self.timings = []
 
@@ -72,7 +84,7 @@ class TimerApp:
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     def play_bell_sound(self):
-        winsound.PlaySound(r"gong-with-music.wav", winsound.SND_FILENAME)
+        winsound.PlaySound(r"bell.wav", winsound.SND_FILENAME)
 
     def save_timing(self):
         focus_time = self.timer_value
@@ -90,7 +102,49 @@ class TimerApp:
             for row in self.timings:
                 csvwriter.writerow(row)
 
+    def open_plot(self):
+        dates = []
+        counts = []
+
+        with open(self.saveFile, 'r') as csvfile:
+            csvreader = csv.reader(csvfile)
+            next(csvreader)  # Skip the header row
+            for row in csvreader:
+                dates.append(row[0])  # Assuming dates are in the first column
+                counts.append(int(row[1]))  # Assuming activity counts are in the second column
+
+        plot_window = tk.Toplevel(self.root)
+        plot_window.title("Track Work Time")
+        plot_window.geometry("800x600")  # Set a smaller plot window size
+
+        figure = Figure(figsize=(8, 6), dpi=100)
+        ax = figure.add_subplot(111)
+
+        sns.lineplot(x=dates, y=counts, marker='x', ax=ax, label='Focus Time')
+        sns.lineplot(x=dates, y=[sum(counts[:i + 1]) for i in range(len(counts))], marker='x', ax=ax,
+                     label='Total Time')
+
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Time')
+        ax.set_title('Focus Time and Total Focus by Date')
+        ax.tick_params(axis='x', rotation=45)
+        ax.legend()
+
+        canvas = FigureCanvasTkAgg(figure, master=plot_window)
+        canvas.get_tk_widget().pack()
+
+        toolbar = NavigationToolbar2Tk(canvas, plot_window)
+        canvas.get_tk_widget().pack()
+
+        plot_window.mainloop()
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        csv_file = sys.argv[1]
+    else:
+        csv_file = "timings.csv"
+
     root = tk.Tk()
-    app = TimerApp(root)
+    app = TimerApp(root, saveFile=csv_file)
     root.mainloop()
