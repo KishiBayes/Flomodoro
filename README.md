@@ -16,6 +16,15 @@ Clone the repository.
 There is a wav (bell.wav) which signals the end of the break. You can of course use any wav file you like (just name it "bell.wav").
 The one I use is a Sound Effect from <a href="https://pixabay.com/sound-effects/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=105159">Pixabay</a>
 
-If you want to turn it into a .exe file, navigate to the directory where this is saved, run pip install pyinstaller.
-Then run pyinstaller stopwatch.py --noconsole --onefile.
+If you want to turn it into a .exe file, navigate to the directory where this is saved, run:
+---
+pip install pyinstaller.
+---
+
+Then run:
+
+---
+pyinstaller stopwatch.py --noconsole --onefile.
+---
+
 Wherever you put the .exe file, make sure you put the wav in the same directory.
