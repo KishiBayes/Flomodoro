@@ -1,4 +1,4 @@
-# timerApp
+# Flomodoro
 A simple Flowtime/Flowmodoro method timer.
 
 Programmed in python, but I run it as an .exe using pyinstaller.
