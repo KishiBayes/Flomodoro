@@ -3,8 +3,6 @@ A simple Flowtime/Flowmodoro method timer.
 
 Programmed in python, but I run it as an .exe using pyinstaller.
 
-![image](https://github.com/KishiBayes/timerApp/assets/55947955/a5bd8d3b-76ab-456d-85be-c88b722768b3)
-
 # How to use:
 Click start, and start working. When you reach the end of flow, click break. You will then have a fifth of the flow time in which you can break.
 
