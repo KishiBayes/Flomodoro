@@ -1,44 +1,48 @@
 import tkinter as tk
 import winsound
 import csv
-import os
 from datetime import datetime
 import sys
-import seaborn as sns
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 class TimerApp:
     def __init__(self, root, saveFile="timings.csv"):
         self.root = root
         self.root.title("Flowmodoro")
-        self.root.geometry("300x150")
+        self.root.overrideredirect(True)  # Remove window decorations
+        self.root.geometry("+0+0")  # Position window in top-left corner
+        self.root.attributes('-alpha', 0.5)  # Set initial transparency
+
         self.saveFile = saveFile
 
         self.timer_value = 0
         self.is_running = False
         self.is_counting_down = False
         self.loop_number = 0
-        self.bell_sound = '\a'  # Bell sound (may not work on all systems)
 
-        # Create a frame to hold the buttons
-        button_frame = tk.Frame(root)
-        button_frame.pack()
+        # Create a frame for the top bar
+        self.top_bar = tk.Frame(root, bg="black")
+        self.top_bar.pack(fill=tk.X)
 
-        # Create the "Start" button
-        self.button = tk.Button(button_frame, text="Start", font=("Helvetica", 14), command=self.toggle_timer)
-        self.button.pack(side=tk.LEFT, padx=10)  # Place the button on the left side with padding
+        # Create the draggable dots
+        self.drag_dots = tk.Label(self.top_bar, text="*\n*\n*", font=("Helvetica", 14), bg="black", fg="white")
+        self.drag_dots.pack(side=tk.LEFT, padx=10)
 
-        # Create the "Track Work Time" button
-        self.plot_button = tk.Button(button_frame, text="Track Work Time", font=("Helvetica", 14), command=self.open_plot)
-        self.plot_button.pack(side=tk.LEFT, padx=10)  # Place the button on the left side with padding
+        # Create the exit button
+        self.exit_button = tk.Button(self.top_bar, text="X", font=("Helvetica", 14), bg="black", fg="white",
+                                     command=self.exit_program)
+        self.exit_button.pack(side=tk.RIGHT, padx=10)
 
-        self.timer_label = tk.Label(root, text="00:00:00", font=("Helvetica", 20))
-        self.timer_label.pack(pady=20)
+        # Create a label to show the timer
+        self.timer_label = tk.Label(self.top_bar, text="00:00:00", font=("Helvetica", 30), bg="black", fg="white")
+        self.timer_label.pack(side=tk.LEFT, padx=20)
 
-        self.figure = Figure(figsize=(8, 6), dpi=100)
-        self.plot_canvas = FigureCanvasTkAgg(self.figure, root)
-        self.plot_canvas.get_tk_widget().pack()
+        # Create and bind the start/stop button
+        self.button = tk.Button(self.top_bar, text="Start", font=("Helvetica", 14), command=self.toggle_timer)
+        self.button.pack(side=tk.LEFT, padx=20)
+
+        # Bind mouse hover events to show/hide window and change opacity
+        self.root.bind("<Enter>", self.on_enter)
+        self.root.bind("<Leave>", self.on_leave)
 
         self.timings = []
 
@@ -48,7 +52,7 @@ class TimerApp:
             self.button.config(text="Stop", bg="red")
         elif self.is_running and not self.is_counting_down:
             self.stop_timer()
-            self.button.config(text="Wait...", bg="grey", state=tk.DISABLED)
+            self.button.config(text="Start", bg="green")
             self.is_counting_down = True
             self.countdown_timer(self.timer_value // 5)
         else:
@@ -56,13 +60,11 @@ class TimerApp:
 
     def start_timer(self):
         self.is_running = True
-        self.button.config(bg="red")
         self.loop_number += 1
         self.update_timer()
 
     def stop_timer(self):
         self.is_running = False
-        self.button.config(bg="green")
 
     def update_timer(self):
         if self.is_running:
@@ -75,13 +77,11 @@ class TimerApp:
             self.timer_label.config(text=self.format_time(seconds))
             self.root.after(1000, lambda: self.countdown_timer(seconds - 1))
         else:
-            self.timer_label.config(text="00:00:00")
-            self.button.config(state=tk.NORMAL)
-            self.play_bell_sound()
             self.save_timing()
             self.timer_value = 0
             self.is_counting_down = False
             self.toggle_timer()
+            self.play_bell_sound()
 
     @staticmethod
     def format_time(seconds):
@@ -89,60 +89,44 @@ class TimerApp:
         minutes, seconds = divmod(remainder, 60)
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
-    def play_bell_sound(self):
-        winsound.PlaySound(r"bell.wav", winsound.SND_FILENAME)
-
     def save_timing(self):
         focus_time = self.timer_value
-        break_time = self.timer_value // 5
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        self.timings.append([current_date, focus_time, break_time])
+        current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.timings.append([current_date, focus_time])
         self.write_to_csv()
 
     def write_to_csv(self):
-        file_exists = os.path.exists('timings.csv')
-        with open('timings.csv', 'a', newline='') as csvfile:
+        with open(self.saveFile, 'a', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
-            if not file_exists:
-                csvwriter.writerow(['Date', 'Activity', 'Time'])
             for row in self.timings:
                 csvwriter.writerow(row)
 
-    def open_plot(self):
-        dates = []
-        counts = []
+    def play_bell_sound(self):
+        winsound.PlaySound(r"bell.wav", winsound.SND_FILENAME)
 
-        with open(self.saveFile, 'r') as csvfile:
-            csvreader = csv.reader(csvfile)
-            next(csvreader)  # Skip the header row
-            for row in csvreader:
-                dates.append(row[0])  # Assuming dates are in the first column
-                counts.append(int(row[1]))  # Assuming activity counts are in the second column
+    def exit_program(self):
+        self.root.destroy()
 
-        plot_window = tk.Toplevel(self.root)
-        plot_window.title("Activity Count Plot")
-        plot_window.geometry("800x600")  # Set a smaller plot window size
+    def on_enter(self, event):
+        self.root.attributes('-alpha', 1.0)  # Set window to fully opaque
 
-        figure = Figure(figsize=(8, 6), dpi=100)
-        ax = figure.add_subplot(111)
+    def on_leave(self, event):
+        self.root.attributes('-alpha', 0.5)  # Set window back to initial transparency
 
-        sns.lineplot(x=dates, y=counts, marker='o', ax=ax, label='Activity Count')
-        sns.lineplot(x=dates, y=[sum(counts[:i + 1]) for i in range(len(counts))], marker='o', ax=ax,
-                     label='Total Time')
+    # Allow dragging the window by clicking and dragging on the top bar
+    def on_drag_start(self, event):
+        self.root.x = event.x
+        self.root.y = event.y
 
-        ax.set_xlabel('Date')
-        ax.set_ylabel('Value')
-        ax.set_title('Activity Count and Total Time over Time')
-        ax.tick_params(axis='x', rotation=45)
-        ax.legend()
+    def on_drag_motion(self, event):
+        deltax = event.x - self.root.x
+        deltay = event.y - self.root.y
+        x = self.root.winfo_x() + deltax
+        y = self.root.winfo_y() + deltay
+        self.root.geometry(f"+{x}+{y}")
 
-        canvas = FigureCanvasTkAgg(figure, master=plot_window)
-        canvas.get_tk_widget().pack()
-
-        toolbar = NavigationToolbar2Tk(canvas, plot_window)
-        canvas.get_tk_widget().pack()
-
-        plot_window.mainloop()
+    def on_drag_release(self, event):
+        pass
 
 
 if __name__ == "__main__":
@@ -153,4 +137,14 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     app = TimerApp(root, saveFile=csv_file)
+
+    # Bind the drag events to the top bar and draggable dots
+    app.top_bar.bind("<ButtonPress-1>", app.on_drag_start)
+    app.top_bar.bind("<B1-Motion>", app.on_drag_motion)
+    app.top_bar.bind("<ButtonRelease-1>", app.on_drag_release)
+
+    app.drag_dots.bind("<ButtonPress-1>", app.on_drag_start)
+    app.drag_dots.bind("<B1-Motion>", app.on_drag_motion)
+    app.drag_dots.bind("<ButtonRelease-1>", app.on_drag_release)
+
     root.mainloop()
